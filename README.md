@@ -1,5 +1,7 @@
 # billcall
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23116722.svg)](https://doi.org/10.5281/zenodo.23116722)
+
 What AI costs a company — counted from one dated price table, before anything is bought and every week
 after. A [Claude Code](https://claude.com/claude-code) plugin of Poly A1, for the person in a company who
 sets AI up and the one who pays for it. Repository: [github.com/vadimchernets/billcall](https://github.com/vadimchernets/billcall).
