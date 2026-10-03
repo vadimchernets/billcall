@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 — 2026-10-03
+
+- Zenodo DOI: the repository is archived on Zenodo; this release is the first one it records (same content as 0.1.0).
+
 ## 0.1.0 — 2026-10-02
 
 - First release: `estimate`, `use`, `week`, `guard`, `contract`, `local` and `prices`, one skill and one
