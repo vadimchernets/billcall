@@ -12,5 +12,8 @@
   "guard_spent": ". O orçamento acabou: diga à pessoa e pergunte ao responsável antes de continuar.",
   "guard_80": ". 80% do orçamento já foi.",
   "guard_50": ". Metade do orçamento já foi.",
-  "guard_partial": " (contado com parte dos registos: a leitura parou no limite de tempo)"
+  "guard_partial": " (contado com parte dos registos: a leitura parou no limite de tempo)",
+  "ratio_headline": "Resumo: os modelos chineses baratos (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) são {low}-{high} vezes mais baratos que o Claude por 1M de tokens: contra o Haiku 4.5 {haiku}, contra o Sonnet 5.5 {sonnet}. Contra o Sonnet é a troca por um modelo mais fraco, não uma economia pura.",
+  "ratio_other": "- contra {model}: {range}",
+  "ratio_conditions": "Condições: preços de tabela da API própria de cada fornecedor em data/prices.json ({updated}), por 1M de tokens, mistura 3 de entrada : 1 de saída, sem cache nem lote; DeepSeek no preço de pico; a faixa de prompt mais baixa. Uma razão acima de 1 significa que o modelo chinês é mais barato. Índice de qualidade: Artificial Analysis Intelligence Index conforme a linha. Os tokenizadores diferem; o Claude 5.x conta cerca de 1,3 vez os tokens do tokenizador anterior do Claude, o que eleva as razões contra o Sonnet 5.5 em até 1,3 vez para o mesmo texto. O Kimi K2.7-code está na tabela, mas não no resumo."
 }

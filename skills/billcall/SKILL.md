@@ -16,23 +16,22 @@ and no `&` — `${CLAUDE_PLUGIN_ROOT}/hooks/python.ps1 billcall say skills/billc
 on one line; that is the form this skill's permission covers. Only if that path has a space in it, write
 `& "${CLAUDE_PLUGIN_ROOT}/hooks/python.ps1" …` instead (the person is then asked once). Never call `python3`,
 `python` or `py` yourself: the launcher finds a real Python 3.8+ (`python`, then `py -3`, then `python3`) and never
-starts the Microsoft Store or Apple stub. If it answers with one line saying billcall "is paused" because this
-computer has no working Python 3 yet, tell the person that in one plain line and do the arithmetic by hand from
+starts the Microsoft Store or Apple stub. If it answers with one line saying billcall "is paused" until this
+computer has Python 3, tell the person that in one plain line and do the arithmetic by hand from
 `data/prices.json` — never show them a Python error and stop.
 
 The user said: $ARGUMENTS
 
 Answer in the person's language. Money is the subject here: say every figure plainly, with the day the price was
-read and where. **billcall counts and compares; it buys nothing, opens no checkout and never asks for a card
-number.** The one who decides and buys is the person responsible for the company's accounts — your job is that
+read and where. **billcall counts and compares; it buys nothing.** The one who decides and buys is the person responsible for the company's accounts — your job is that
 they decide on the right numbers.
 
 ## Where every number comes from
 
 `data/prices.json`: one row per product, each with the page it was read from (`url`), the day (`checked`) and how it
 was read (`status`: `official` - the vendor's own page; `secondary` - another source, named in `note`). Say
-"from a secondary source" when a row says so. A product that is not in the table has no price from billcall: say
-so and name the vendor's page — never guess a price.
+"from a secondary source" when a row says so. For a product outside the table, name the vendor's page where its
+price is read — never guess a price.
 
 ## 1. What the AI will cost (estimate)
 

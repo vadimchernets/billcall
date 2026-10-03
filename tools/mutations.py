@@ -80,7 +80,10 @@ def api_without_quality(doc):
 
 
 def secondary_without_note(doc):
-    del first(doc["rows"], lambda row: row.get("status") == "secondary")["note"]
+    # every row may be official; mark one secondary first, so the mutation needs no secondary row in the table
+    row = first(doc["rows"], lambda row: row.get("status") == "secondary" or "note" in row)
+    row["status"] = "secondary"
+    del row["note"]
 
 
 def coding_plan_for_scripts(doc):

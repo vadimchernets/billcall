@@ -6,8 +6,7 @@ What AI costs a company — counted from one dated price table, before anything 
 after. A [Claude Code](https://claude.com/claude-code) plugin of Poly A1, for the person in a company who
 sets AI up and the one who pays for it. Repository: [github.com/vadimchernets/billcall](https://github.com/vadimchernets/billcall).
 
-**billcall counts and compares; it buys nothing, opens no checkout and never asks for a card.** The person
-responsible for the company's accounts decides and buys — on numbers that name their source and their day.
+**billcall counts and compares; it buys nothing.** The person responsible for the company's accounts decides and buys — on numbers that name their source and their day.
 
 ## What it does
 
@@ -47,7 +46,7 @@ read too long ago and a promotion past its date.
 
 `data/facts-2026-10.md` (Russian: `data/ru/facts-2026-10.md`) checks every claim of the track's plan that carried a
 source tag or was not confirmed, against the vendor's own page: confirmed, refuted (with the right value) or
-confirmed only on a third-party page, each with its link and day. Its last part holds the three side-by-side
+confirmed on a third-party page, each with its link and day. Its last part holds the three side-by-side
 tables, written from `data/prices.json` by `tools/side_by_side.py`. `data/late-opinions-map.md` and
 `data/jev-ideas-map.md` give every idea of the AI council's late opinions and of the owner's JEV notes a verdict
 and the place it went. `tools/check_coverage.py` reddens when a plan line, an opinion file or a JEV range has no

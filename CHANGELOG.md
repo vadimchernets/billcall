@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.1.3 — 2026-10-03
+
+- Primary sources for all eight `secondary` rows of `data/prices.json` (now `official`, checked 2026-10-03; no row is
+  `secondary` any more): `openai-codex-seat-usage-based` (openai.com/index/codex-flexible-pricing-for-teams/ and help
+  articles 20001492, 20001106), `zai-glm-coding-plan` (the plan objects in the script z.ai/subscribe loads),
+  `apple-mac-studio-m5-ultra-256gb` (Apple Store configuration pages), `nvidia-dgx-spark` (NVIDIA Marketplace, read in
+  a desktop browser: 128 GB $6,950.00; the 64 GB $4,999 from the NVIDIA blog), `coursera-for-teams`
+  (coursera.org/business/compare-plans page data), `codecademy-teams` (codecademy.com/business/pricing),
+  `linkedin-learning` (LinkedIn Help a768297), `litellm-enterprise` (docs.litellm.ai/docs/enterprise: "Pricing is
+  based on usage. Contact us for a quote" - the row now has no price, like the other contact-sales rows; the
+  third-party ~$30k a year stays only in `price_note`).
+- Figures corrected against those pages: Codecademy Teams $25 -> $24.92 a seat a month (billed annually, from 2 users);
+  LinkedIn Learning "about EUR 350" -> USD 379.88 per licence a year (Learning for Teams self-serve, 2 to 20 online,
+  at most 50); GLM Coding Plan 18 / 80 / 168 dates from 2026-07-30 (official notice), not 2026-08-24; the Codex-only
+  seat note drops "about $100-200 per developer per month" (on no official page) and says the 2026-06-24 cut-off is
+  for Business only.
+- Facts F29, F82, F88 now `confirmed`, F60 and F79 `refuted`, each on the vendor's own page (en and ru).
+- `tools/mutations.py`: the "secondary row without a note" mutation marks a row secondary itself, since the table
+  may have none.
+- Quality index added for `alibaba-api-qwen3-8-flash` (40), `openai-api-gpt-6-luna` (38, max) and
+  `google-api-gemini-2-5-flash-lite` (9), from artificialanalysis.ai, read 2026-10-03.
+- Cheap class ratio: `billcall side-by-side china` now prints how many times the cheap Chinese models (DeepSeek V4.1
+  Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3; Kimi K2.7-code shown apart) are cheaper than
+  Claude Haiku 4.5 and Sonnet 5.5, and against GPT-6 Luna, Gemini 3.8 Flash and Gemini 2.5 Flash-Lite, per 1M tokens
+  (3 input : 1 output, list price), with the quality index on both sides and a headline in the person's language
+  (`--lang`); `tools/side_by_side.py` writes it into a new section of `data/facts-2026-10.md` and `data/ru/`.
+- Wording: no disclaimers. README and the skill say what billcall does, once; a product outside the price table
+  gets its vendor's page. Tests: a tone check reddens on disclaimers, excuses and apologies in what people read
+  (five languages). The budget stop, the vendor rules and the quality index are unchanged.
+
 ## 0.1.2 — 2026-10-03
 
 - README: the Zenodo DOI badge (the concept DOI always points to the latest version).

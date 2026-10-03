@@ -13,7 +13,10 @@
     "guard_spent": "appended when the budget is spent; it also tells Claude to ask the person responsible",
     "guard_80": "appended from 80%",
     "guard_50": "appended from 50%",
-    "guard_partial": "appended when the log scan stopped at its time limit"
+    "guard_partial": "appended when the log scan stopped at its time limit",
+    "ratio_headline": "the one-line headline under the cheap-class table; keep {low}, {high}, {haiku}, {sonnet}; never present a weaker model as a plain saving",
+    "ratio_other": "one line per other reference model; keep {model} and {range}",
+    "ratio_conditions": "the conditions the ratios hold under; keep {updated}"
   },
   "week_file": "week-AI.md",
   "week_title": "AI this week",
@@ -27,5 +30,8 @@
   "guard_spent": ". The budget is spent: tell the person, and ask the one responsible before going on.",
   "guard_80": ". 80% of the budget is gone.",
   "guard_50": ". Half of the budget is gone.",
-  "guard_partial": " (counted from part of the logs: the scan stopped at its time limit)"
+  "guard_partial": " (counted from part of the logs: the scan stopped at its time limit)",
+  "ratio_headline": "Headline: the cheap Chinese models (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) are {low}-{high} times cheaper than Claude per 1M tokens: against Haiku 4.5 {haiku}, against Sonnet 5.5 {sonnet}. Against Sonnet this is a move to a weaker model, not a plain saving.",
+  "ratio_other": "- against {model}: {range}",
+  "ratio_conditions": "Conditions: list prices of each vendor's own API from data/prices.json ({updated}), per 1M tokens, blended 3 input : 1 output, no cache, no batch; DeepSeek at its peak-hour price; the lowest prompt tier. A ratio above 1 means the Chinese model is cheaper. Quality index: Artificial Analysis Intelligence Index as recorded in the row (variants differ: max, high). Tokenizers differ between vendors, so the same text is not the same number of tokens; Claude 5.x counts about 1.3x the tokens of the previous Claude tokenizer (the row's tokenizer_factor), which raises the Sonnet 5.5 ratios by up to 1.3x for the same text. Kimi K2.7-code (Moonshot has no flash-class model) is in the table but not in the headline."
 }

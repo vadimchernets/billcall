@@ -1,7 +1,7 @@
 {
   "name": "billcall",
-  "description": "What AI costs a company, counted from one dated price table: the monthly bill of a mix of seats, API work and own machines with the price of one accepted task; the week's spend from Claude Code's logs, the Team spend report and OpenTelemetry, with idle seats; budget alarms at 50, 80 and 100 per cent; Team against Enterprise; contract rates as a modelPricing block for managed settings; an own GPU machine against renting. It counts and compares - it buys nothing and never asks for a card.",
-  "version": "0.1.2",
+  "description": "What AI costs a company, counted from one dated price table: the monthly bill of a mix of seats, API work and own machines with the price of one accepted task; the week's spend from Claude Code's logs, the Team spend report and OpenTelemetry, with idle seats; budget alarms at 50, 80 and 100 per cent; Team against Enterprise; contract rates as a modelPricing block for managed settings; an own GPU machine against renting. It counts and compares - it buys nothing.",
+  "version": "0.1.3",
   "author": { "name": "Vadym Chernets" },
   "homepage": "https://github.com/vadimchernets/billcall",
   "license": "Apache-2.0",

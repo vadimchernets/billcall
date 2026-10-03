@@ -1189,6 +1189,146 @@ def say_side_by_side(header, lines):
     return "\n".join(out)
 
 
+# ---------------------------------------------------------------- cheap class ratio ---------
+
+# The cheap class: each Chinese vendor's own cheapest general model with a list price, at the vendor's own
+# API (not a reseller). Moonshot has no flash-class model, so Kimi K2.7-code stands in and is kept out of
+# the headline range (CHEAP_CHINA_HEADLINE).
+CHEAP_CHINA = ("deepseek-api-flash", "alibaba-api-qwen3-8-flash", "zai-api-glm-5-3-flash",
+               "xiaomi-api-mimo-v2-6-flash", "minimax-api-m3", "moonshot-api-kimi-k2-7-code")
+CHEAP_CHINA_HEADLINE = CHEAP_CHINA[:5]
+# What they are set against: Claude Haiku and Sonnet, and the cheap models of OpenAI and Google.
+CHEAP_REFERENCE = ("anthropic-api-claude-haiku-4-5", "anthropic-api-claude-sonnet-5-5", "google-api-gemini-3-8-flash",
+                   "openai-api-gpt-6-luna", "google-api-gemini-2-5-flash-lite")
+# Input tokens to one output token in the blended price (the Artificial Analysis convention, 3:1).
+BLEND_INPUT, BLEND_OUTPUT = 3.0, 1.0
+
+
+def first_rate(row, unit):
+    """The row's first price in a unit (the lowest prompt tier, the peak hour) -> float or None."""
+    for price in row.get("prices") or []:
+        if isinstance(price, dict) and price.get("unit") == unit and isinstance(price.get("amount"), (int, float)):
+            return float(price["amount"])
+    return None
+
+
+def blended(row):
+    """$ per 1M tokens at 3 input : 1 output, list price, no cache, no batch -> float or None."""
+    rate_in, rate_out = first_rate(row, "1M-input"), first_rate(row, "1M-output")
+    if rate_in is None or rate_out is None:
+        return None
+    return (BLEND_INPUT * rate_in + BLEND_OUTPUT * rate_out) / (BLEND_INPUT + BLEND_OUTPUT)
+
+
+def times(a, b):
+    """How many times a is dearer than b -> float or None (b free or unknown)."""
+    if a is None or b is None or b <= 0:
+        return None
+    return a / b
+
+
+def say_times(value):
+    if value is None:
+        return "-"
+    return ("x%.1f" % value) if value >= 1 else ("x%.2f" % value)
+
+
+def quality_word(cheap, ref):
+    """The cheap model against the reference on the quality index -> 'weaker 39 vs 56' and the like."""
+    a, b = quality_of(cheap)[0], quality_of(ref)[0]
+    if a is None or b is None:
+        return "quality index not known for both - bench before switching"
+    if abs(a - b) <= 2:
+        word = "about the same"
+    else:
+        word = "weaker" if a < b else "stronger"
+    return "%s, index %g vs %g" % (word, a, b)
+
+
+def pair(cheap, ref):
+    """One cheap Chinese row against one reference row -> dict of ratios and the quality word."""
+    return {"cheap": cheap["id"], "ref": ref["id"],
+            "input": times(first_rate(ref, "1M-input"), first_rate(cheap, "1M-input")),
+            "output": times(first_rate(ref, "1M-output"), first_rate(cheap, "1M-output")),
+            "blended": times(blended(ref), blended(cheap)),
+            "quality": quality_word(cheap, ref)}
+
+
+def short_price(row):
+    return "%s in / %s out" % (money(first_rate(row, "1M-input") or 0), money(first_rate(row, "1M-output") or 0))
+
+
+def cheap_class(table):
+    """How many times the cheap Chinese models are cheaper than Claude Haiku / Sonnet, GPT-6 Luna and the Gemini
+    Flash models, per 1M tokens at list price. A ratio above 1 means the Chinese model is cheaper.
+    -> {"header", "lines", "pairs", "ranges": {ref id: (low, high, quality words)}}."""
+    rows = table["rows"]
+    cheap = [rows[i] for i in CHEAP_CHINA if i in rows]
+    refs = [rows[i] for i in CHEAP_REFERENCE if i in rows]
+    header = ["Chinese model ($ per 1M)", "Quality index"]
+    header += ["vs %s (%s)" % (str(r.get("product")).split(" - ")[-1], short_price(r)) for r in refs]
+    lines, pairs = [], []
+    for row in cheap:
+        value = quality_of(row)[0]
+        line = [row_cell(row, short=True), ("%g" % value) if value is not None else "-"]
+        for ref in refs:
+            one = pair(row, ref)
+            pairs.append(one)
+            line.append(cell_text("%s (in %s, out %s); %s" % (say_times(one["blended"]), say_times(one["input"]),
+                                                              say_times(one["output"]), one["quality"])))
+        lines.append(line)
+    ranges = {}
+    for ref in refs:
+        got = [p for p in pairs if p["ref"] == ref["id"] and p["cheap"] in CHEAP_CHINA_HEADLINE and p["blended"] is not None]
+        if got:
+            known = [quality_of(rows[p["cheap"]])[0] for p in got if quality_of(rows[p["cheap"]])[0] is not None]
+            ranges[ref["id"]] = (min(p["blended"] for p in got), max(p["blended"] for p in got),
+                                 (min(known), max(known)) if known else None, quality_of(ref)[0],
+                                 len(got) - len(known))
+    return {"header": [cell_text(h) for h in header], "lines": lines, "pairs": pairs, "ranges": ranges}
+
+
+def say_cheap_class(result, table, words=None):
+    """The table, then one headline line and its conditions, in the person's language (lang/*.json)."""
+    words = words or lang_words("en")
+    rows = table["rows"]
+    out = [say_side_by_side(result["header"], result["lines"]), ""]
+    ranges = result["ranges"]
+    claude = [ranges[i] for i in CHEAP_REFERENCE[:2] if i in ranges]
+    others = [ranges[i] for i in CHEAP_REFERENCE[2:] if i in ranges]
+    if claude:
+        out.append(words["ratio_headline"].format(
+            low="%.1f" % min(r[0] for r in claude), high="%.1f" % max(r[1] for r in claude),
+            haiku=say_range(ranges.get(CHEAP_REFERENCE[0])), sonnet=say_range(ranges.get(CHEAP_REFERENCE[1]))))
+    for ref_id in CHEAP_REFERENCE[2:]:
+        if ref_id in ranges:
+            out.append(words["ratio_other"].format(model=str(rows[ref_id].get("product")).split(" - ")[-1],
+                                                   range=say_range(ranges[ref_id])))
+    if others:
+        out.append("")
+    out.append(words["ratio_conditions"].format(updated=table.get("updated")))
+    return "\n".join(out)
+
+
+def say_range(item):
+    """(low, high, Chinese index range, reference index, rows without an index) -> 'x3.8-x11.4 (index 29-42 vs 17)'."""
+    if not item:
+        return "-"
+    low, high, cheap_q, ref_q, unknown = item
+    say = lambda v: ("x%.1f" % v) if v >= 1 else ("x%.2f" % v)
+    if cheap_q is None or ref_q is None:
+        quality = "quality index not known for both - bench before switching"
+    else:
+        quality = "index %g-%g vs %g" % (cheap_q[0], cheap_q[1], ref_q)
+        if cheap_q[1] < ref_q - 2:
+            quality += ", all weaker"
+        elif cheap_q[0] > ref_q + 2:
+            quality += ", all stronger"
+        if unknown:
+            quality += "; %d without an index" % unknown
+    return "%s-%s (%s)" % (say(low), say(high), quality)
+
+
 # ---------------------------------------------------------------- contract ------------------
 
 MODEL_PRICING_RATES = ("input", "output", "cacheRead", "cacheWrite")
@@ -1371,6 +1511,7 @@ def parser():
 
     one = sub.add_parser("side-by-side", help="the US five, the Chinese vendors or local machines, side by side")
     one.add_argument("group", choices=GROUPS)
+    one.add_argument("--lang", help="language of the cheap-class headline under the china table (default: en)")
 
     one = sub.add_parser("prices", help="rows of the price table")
     one.add_argument("--kind")
@@ -1497,6 +1638,10 @@ def run(argv):
         print("billcall side-by-side %s - price table of %s; every figure names the day it was read and its page"
               % (args.group, table.get("updated")))
         print(say_side_by_side(header, lines))
+        if args.group == "china":
+            print("")
+            print("Cheap class: how many times cheaper per 1M tokens (list price, 3 input : 1 output)")
+            print(say_cheap_class(cheap_class(table), table, lang_words(pick_lang(args.lang or "en"))))
         print("billcall counts and compares; it buys nothing - the person responsible buys.")
         return 0
     if args.command == "prices":

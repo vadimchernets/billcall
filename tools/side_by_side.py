@@ -6,7 +6,9 @@
   python3 tools/side_by_side.py --check    exit 1 when a file's tables differ from the price table
 
 The tables - the US five with Microsoft and GitHub, the Chinese vendors, own machines and rent with the
-models to run on them - are never typed by hand: a price corrected in data/prices.json changes them, and
+models to run on them - and the cheap-class ratio under the Chinese one (how many times the cheap Chinese
+models are cheaper than Claude, GPT-6 Luna and Gemini Flash, with the quality index on both sides; its headline
+in the file's language) are never typed by hand: a price corrected in data/prices.json changes them, and
 --check (run by the tests) reddens until they are written again. Each sits between
 <!-- side-by-side:GROUP:start --> and <!-- side-by-side:GROUP:end -->.
 """
@@ -16,7 +18,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(ROOT, "skills", "billcall", "scripts", "billcall.py")
-FILES = (os.path.join(ROOT, "data", "facts-2026-10.md"), os.path.join(ROOT, "data", "ru", "facts-2026-10.md"))
+FILES = ((os.path.join(ROOT, "data", "facts-2026-10.md"), "en"), (os.path.join(ROOT, "data", "ru", "facts-2026-10.md"), "ru"))
+CHEAP = "china-cheap"
 
 
 def load_billcall():
@@ -26,11 +29,12 @@ def load_billcall():
     return module
 
 
-def tables(billcall, table):
+def tables(billcall, table, lang="en"):
     out = {}
     for group in billcall.GROUPS:
         header, lines = billcall.side_by_side(table, group)
         out[group] = billcall.say_side_by_side(header, lines)
+    out[CHEAP] = billcall.say_cheap_class(billcall.cheap_class(table), table, billcall.lang_words(lang))
     return out
 
 
@@ -55,9 +59,10 @@ def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     check = "--check" in args
     billcall = load_billcall()
-    made = tables(billcall, billcall.load_prices())
+    prices = billcall.load_prices()
     bad = 0
-    for path in FILES:
+    for path, lang in FILES:
+        made = tables(billcall, prices, lang)
         try:
             with open(path, encoding="utf-8") as handle:
                 text = handle.read()

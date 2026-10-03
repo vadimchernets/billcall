@@ -131,6 +131,45 @@ class SideBySide(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("| Vendor | API", out)
         self.assertIn("buys nothing", out)
+        self.assertIn("Cheap class", out)
+        self.assertIn("not a plain saving", out)
+
+    def test_the_cheap_class_ratio_is_counted_from_the_price_table(self):
+        result = billcall.cheap_class(TABLE)
+        pairs = dict(((p["cheap"], p["ref"]), p) for p in result["pairs"])
+        # GLM-5.3-Flash $0.15/$0.50 against Sonnet 5.5 $2/$10 at 3:1 -> 4.0 / 0.2375
+        glm = pairs[("zai-api-glm-5-3-flash", "anthropic-api-claude-sonnet-5-5")]
+        self.assertAlmostEqual(glm["blended"], 4.0 / 0.2375, places=6)
+        self.assertAlmostEqual(glm["input"], 2 / 0.15, places=6)
+        self.assertTrue(glm["quality"].startswith("weaker"))
+        # the honest side: GPT-6 Luna is as cheap as the cheapest Chinese models, or cheaper
+        luna = [p["blended"] for p in result["pairs"] if p["ref"] == "openai-api-gpt-6-luna"]
+        self.assertLess(min(luna), 1)
+        low, high = result["ranges"]["anthropic-api-claude-sonnet-5-5"][:2]
+        self.assertGreater(high, low)
+        self.assertGreater(low, 1)
+        for line in result["lines"]:
+            self.assertEqual(len(line), len(result["header"]))
+            self.assertRegex(line[0], r"read \[\d{4}-\d{2}-\d{2}\]\(https://")
+
+    def test_a_cheaper_weaker_model_is_never_shown_as_a_plain_saving(self):
+        text = billcall.say_cheap_class(billcall.cheap_class(TABLE), TABLE)
+        self.assertIn("all weaker", text)
+        self.assertIn("not a plain saving", text)
+        ru = billcall.say_cheap_class(billcall.cheap_class(TABLE), TABLE, billcall.lang_words("ru"))
+        self.assertNotEqual(ru.splitlines()[-1], text.splitlines()[-1])
+
+    def test_a_changed_price_changes_the_ratio(self):
+        table = json.loads(PRICES.read_text(encoding="utf-8"))
+        for row in table["rows"]:
+            if row["id"] == "zai-api-glm-5-3-flash":
+                row["prices"][0]["amount"] = 0.30
+        path = Path(tempfile.mkdtemp()) / "prices.json"
+        path.write_text(json.dumps(table), encoding="utf-8")
+        changed = billcall.cheap_class(billcall.load_prices(str(path)))
+        pairs = dict(((p["cheap"], p["ref"]), p) for p in changed["pairs"])
+        self.assertAlmostEqual(pairs[("zai-api-glm-5-3-flash", "anthropic-api-claude-sonnet-5-5")]["input"], 2 / 0.30,
+                               places=6)
 
 
 class QualityAndSurfaces(unittest.TestCase):
