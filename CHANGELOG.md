@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.4 — 2026-10-03
+
+- `trace`: what the agents did and what it cost, per person, project and day, from the company's Claude Code session
+  logs (`~/.claude/projects/*/*.jsonl` and the subagent logs under them, `$CLAUDE_CONFIG_DIR` first): sessions,
+  subagent runs, API responses, tool calls by name, web searches, tokens and the API list price of the price table
+  (5-minute and one-hour cache writes priced apart, a model without a row named with its tokens). A team's folders
+  are named per person (`--logs ann=<folder>`); `--since`/`--until`, `--json`, `--ndjson` (one line per response),
+  `--report` in the person's language. Fixture logs in `tests/fixtures/trace/`.
+- `guard` on a seat: `claude_billing` in the company policy (`api`, the default, or `seat`) or `--billing`. Usage inside
+  a Team, Pro or Max seat allowance is not metered in dollars (code.claude.com/docs/en/costs), so on `seat` the hook
+  stays silent and `guard` prints one in-seat line that is not money; the alarm is for API, Enterprise and usage
+  credits.
+- `week`: seats nobody used come from activity — `--activity` (the analytics export) or `--otel` — not from the spend
+  report, which covers usage-credit spend only: a person working inside the seat allowance is active at $0.
+- `anthropic-enterprise`: since 2026-09-01 the seat is access only and all usage is billed at API rates; self-serve
+  from 20 seats, sales-assisted from 50; Standard/Premium seat plans move to the single seat at renewal
+  (support.claude.com/en/articles/9797531, read 2026-10-03).
+- `cursor-teams`: Standard $40 and Premium $120 a user a month (cursor.com/docs/account/teams/pricing, read
+  2026-10-03); the side-by-side tables in `data/facts-2026-10.md` and `data/ru/` follow.
+- New words in all five languages: `trace_title`, `trace_file`, `guard_in_seat`.
+
 ## 0.1.3 — 2026-10-03
 
 - Primary sources for all eight `secondary` rows of `data/prices.json` (now `official`, checked 2026-10-03; no row is

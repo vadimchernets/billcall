@@ -13,10 +13,17 @@ Run it through the plugin's launcher (skills/billcall/SKILL.md says how):
       starts another program on a plan: exit 1 and the rule when the vendor's terms say no.
   billcall.py week [--days 7] [--logs DIR] [--team-csv FILE] [--roster FILE] [--otel FILE]
                    [--report DIR] [--lang xx] [--json]
+                   [--activity FILE]
       What was spent: Claude Code's own session logs on this machine (at list price, the way
       /usage counts), a Team or Enterprise spend-report CSV, an OpenTelemetry export; idle seats.
+  billcall.py trace [--days 7 | --since YYYY-MM-DD] [--logs [PERSON=]DIR] [--person NAME]
+                    [--billing api|seat] [--report DIR] [--lang xx] [--json | --ndjson]
+      What the agents did and what it cost, per person, project and day: sessions, subagent runs,
+      tool calls, tokens and the API list price, from the company's Claude Code session logs.
   billcall.py guard [--budget-day USD] [--budget-month USD] [--policy FILE] [--logs DIR] [--hook]
-      Today's and this month's spend against a budget, at 50, 80 and 100 per cent.
+                    [--billing api|seat]
+      Today's and this month's spend against a budget, at 50, 80 and 100 per cent; on a seat
+      (billing seat) one line of in-seat usage, which is not money.
   billcall.py contract --people N --usage USD
   billcall.py contract (--discount PCT | --rates FILE) [--target managed] [--out FILE]
       Team Premium against Enterprise for N people; the modelPricing block that makes Claude Code
@@ -36,8 +43,10 @@ the lines say which. 2: the input cannot be read. Never a traceback.
 import argparse
 import csv
 import datetime
+import getpass
 import json
 import os
+import platform
 import re
 import sys
 import time
@@ -929,6 +938,62 @@ def otel_cost(path):
     return people
 
 
+def activity_csv(path):
+    """An analytics export (one row per person, or per person and day): e-mail -> the sum of its
+    activity columns (sessions, prompts, lines, commits, pull requests, requests, messages)."""
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            header = reader.fieldnames or []
+            rows = list(reader)
+    except (OSError, csv.Error, UnicodeDecodeError) as exc:
+        raise Problem("cannot read the activity export %s: %s" % (path, exc))
+    email = column(header, "email")
+    if not email:
+        raise Problem("%s has no e-mail column (its columns: %s)" % (path, ", ".join(header)))
+    words = ("session", "prompt", "line", "commit", "pull", "request", "message", "conversation", "active")
+    counted = [name for name in header if name != email and any(w in name.lower() for w in words)
+               and not any(w in name.lower() for w in ("spend", "usd", "cost"))]
+    out = {}
+    for row in rows:
+        who = (row.get(email) or "").strip().lower()
+        if who:
+            out[who] = out.get(who, 0.0) + sum(amount_of(row.get(name)) for name in counted)
+    return out
+
+
+def otel_activity(path):
+    """user.email -> the sum of claude_code.session.count and claude_code.token.usage points: who worked."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+    except OSError as exc:
+        raise Problem("cannot read the OpenTelemetry export %s: %s" % (path, exc))
+    out = {}
+    for line in [text] + text.splitlines():
+        try:
+            doc = json.loads(line)
+        except ValueError:
+            continue
+        for resource in (doc.get("resourceMetrics") or []) if isinstance(doc, dict) else []:
+            for scope in resource.get("scopeMetrics") or []:
+                for metric in scope.get("metrics") or []:
+                    if not str(metric.get("name", "")).startswith("claude_code."):
+                        continue
+                    data = metric.get("sum") or metric.get("gauge") or {}
+                    for point in data.get("dataPoints") or []:
+                        who = str(otel_attrs(point).get("user.email") or "").strip().lower()
+                        try:
+                            value = float(point.get("asDouble", point.get("asInt", 0)))
+                        except (TypeError, ValueError):
+                            continue
+                        if who and value > 0:
+                            out[who] = out.get(who, 0.0) + 1.0
+        if out:
+            break
+    return out
+
+
 def week(args, table):
     days = max(1, int(args.days))
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -944,11 +1009,20 @@ def week(args, table):
     if args.otel:
         out["otel"] = otel_cost(args.otel)
     if args.roster:
-        if out["team"] is None:
-            raise Problem("--roster is compared with a spend report: give --team-csv too")
+        # The spend report covers usage-credit spend only: a person working inside the seat allowance
+        # shows 0 there. Who used a seat comes from activity - analytics or OpenTelemetry.
+        if not (args.activity or args.otel):
+            raise Problem("--roster is compared with activity: give --activity (the analytics export) or --otel")
+        active = {}
+        if args.activity:
+            for who, value in activity_csv(args.activity).items():
+                active[who] = active.get(who, 0.0) + value
+        if args.otel:
+            for who, value in otel_activity(args.otel).items():
+                active[who] = active.get(who, 0.0) + value
         names = roster(args.roster)
         floor = float(args.idle_below)
-        out["idle"] = [n for n in names if out["team"].get(n, {}).get("requests", 0.0) < floor]
+        out["idle"] = [n for n in names if active.get(n, 0.0) < floor]
     return out
 
 
@@ -989,11 +1063,237 @@ def say_week(result, words):
     if result["idle"] is not None:
         lines.append("")
         lines.append("## %s" % words.get("week_idle", "Seats nobody used"))
+        lines.append("(from activity: analytics or OpenTelemetry - the spend report shows usage credits only)")
         if result["idle"]:
             lines.extend("- %s" % who for who in result["idle"])
         else:
             lines.append("- none")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------- trace ---------------------
+
+def default_person():
+    """This computer's person: the OS user and the machine, 'ann@ann-mbp'."""
+    try:
+        user = getpass.getuser()
+    except Exception:              # no user name in the environment
+        user = "user"
+    machine = (platform.node() or "machine").split(".")[0]
+    return "%s@%s" % (user, machine)
+
+
+def trace_roots(specs=None, person=None):
+    """[(person, projects folder)]: '--logs ann=/mnt/ann/.claude/projects' names the person whose
+    folder it is; a bare folder (and the default ones) belongs to --person or this computer's person."""
+    own = person or default_person()
+    if not specs:
+        return [(own, root) for root in log_roots()]
+    out = []
+    for spec in specs:
+        name, sep, folder = spec.partition("=")
+        if not sep or os.path.isdir(spec):
+            name, folder = own, spec
+        folder = os.path.expanduser(folder)
+        if not os.path.isdir(folder):
+            raise Problem("no Claude Code projects folder at %s" % folder)
+        out.append((name.strip() or own, folder))
+    return out
+
+
+def project_of(cwd, folder):
+    """The project a session ran in: its cwd ('~' for the home folder), else the log folder's name."""
+    if cwd:
+        home = os.path.expanduser("~")
+        if cwd == home or cwd.startswith(home + os.sep):
+            return "~" + cwd[len(home):]
+        return cwd
+    return folder
+
+
+def read_trace(roots, since=None, until=None):
+    """Every API response of every session in the logs, with who, where, when, what and the tools it
+    called. Each response counts once (its content blocks share one message id and request id), each
+    tool call once (by its block id). -> (responses, files)."""
+    calls = set()
+    responses = {}
+    order = []
+    files = 0
+    floor = since.timestamp() - 86400 if since else None
+    for person, root in roots:
+        for folder, dirs, names in os.walk(root):
+            dirs.sort(key=lambda d: (d == "subagents", d))
+            for name in sorted(names):
+                if not name.endswith(".jsonl"):
+                    continue
+                path = os.path.join(folder, name)
+                try:
+                    if floor is not None and os.path.getmtime(path) < floor:
+                        continue
+                    handle = open(path, encoding="utf-8", errors="replace")
+                except OSError:
+                    continue
+                files += 1
+                rel = os.path.relpath(path, root).split(os.sep)
+                subagent = "subagents" in rel
+                log_folder = rel[0] if len(rel) > 1 else os.path.basename(root)
+                cwd = None
+                with handle:
+                    for line in handle:
+                        try:
+                            record = json.loads(line)
+                        except ValueError:
+                            continue
+                        if not isinstance(record, dict):
+                            continue
+                        cwd = record.get("cwd") or cwd
+                        message = record.get("message")
+                        if record.get("type") != "assistant" or not isinstance(message, dict):
+                            continue
+                        stamp = parse_ts(record.get("timestamp"))
+                        if stamp is None or (since is not None and stamp < since) or (until is not None and stamp >= until):
+                            continue
+                        key = (person, message.get("id"), record.get("requestId"))
+                        if key[1:] == (None, None):
+                            key = (person, path, record.get("uuid"))
+                        entry = responses.get(key)
+                        if entry is None:
+                            usage = message.get("usage") if isinstance(message.get("usage"), dict) else {}
+                            entry = usage_entry(message.get("model"), usage, stamp)
+                            tools = usage.get("server_tool_use") if isinstance(usage.get("server_tool_use"), dict) else {}
+                            entry.update({
+                                "person": person, "project": project_of(cwd, log_folder),
+                                "session": (record.get("sessionId") or os.path.splitext(name)[0])
+                                + ("/" + os.path.splitext(name)[0] if subagent else ""),
+                                "subagent": bool(subagent or record.get("isSidechain")),
+                                "branch": record.get("gitBranch") or "", "tools": {},
+                                "web_search": count(tools.get("web_search_requests")),
+                                "web_fetch": count(tools.get("web_fetch_requests"))})
+                            responses[key] = entry
+                            order.append(key)
+                        for block in message.get("content") or []:
+                            if isinstance(block, dict) and block.get("type") == "tool_use":
+                                call = (person, block.get("id") or (path, len(calls)))
+                                if call in calls:
+                                    continue
+                                calls.add(call)
+                                tool = str(block.get("name") or "unknown")
+                                entry["tools"][tool] = entry["tools"].get(tool, 0) + 1
+    return sorted((responses[k] for k in order), key=lambda e: e["time"]), files
+
+
+def tokens_of(entry):
+    return entry["input"] + entry["output"] + entry["read"] + entry["write_5m"] + entry["write_1h"]
+
+
+def trace(entries, rows):
+    """Who, where and which day: sessions, responses, subagent runs, tool calls, tokens, the cost at the
+    API list price; a model the table does not price is counted in tokens and named, never as $0."""
+    groups = {"person": {}, "project": {}, "day": {}}
+    models = {}
+    tools = {}
+    total = {"usd": 0.0, "tokens": 0, "unpriced_tokens": 0, "responses": len(entries), "sessions": set(),
+             "subagent_sessions": set(), "tool_calls": 0, "web_search": 0, "web_fetch": 0}
+    for entry in entries:
+        row = model_row(entry["model"], rows)
+        cost = entry_cost(entry, row) if row else None
+        tokens = tokens_of(entry)
+        called = sum(entry["tools"].values())
+        session = (entry["person"], entry["session"])
+        slot = models.setdefault(entry["model"], {"tokens": 0, "usd": 0.0 if cost is not None else None})
+        slot["tokens"] += tokens
+        if cost is not None:
+            slot["usd"] = (slot["usd"] or 0.0) + cost
+        for name, number_of in entry["tools"].items():
+            tools[name] = tools.get(name, 0) + number_of
+        keys = {"person": entry["person"], "project": entry["project"], "day": local_day(entry["time"]).isoformat()}
+        for kind, value in keys.items():
+            group = groups[kind].setdefault(value, {"usd": 0.0, "tokens": 0, "unpriced_tokens": 0, "responses": 0,
+                                                    "sessions": set(), "subagent_sessions": set(), "tool_calls": 0})
+            for bucket in (group, total) if kind == "person" else (group,):
+                bucket["tokens"] += tokens
+                bucket["tool_calls"] += called
+                bucket["sessions"].add(session)
+                if entry["subagent"]:
+                    bucket["subagent_sessions"].add(session)
+                if cost is None:
+                    bucket["unpriced_tokens"] += tokens
+                else:
+                    bucket["usd"] += cost
+            group["responses"] += 1
+        total["web_search"] += entry["web_search"]
+        total["web_fetch"] += entry["web_fetch"]
+
+    def plain(group):
+        return dict(group, sessions=len(group["sessions"]), subagent_sessions=len(group["subagent_sessions"]))
+    return {"total": plain(total), "models": models, "tools": tools,
+            "person": dict((k, plain(v)) for k, v in groups["person"].items()),
+            "project": dict((k, plain(v)) for k, v in groups["project"].items()),
+            "day": dict((k, plain(v)) for k, v in groups["day"].items())}
+
+
+def cost_cell(group):
+    text = money(group["usd"])
+    if group["unpriced_tokens"]:
+        text += " + %s tokens with no price" % "{:,}".format(group["unpriced_tokens"])
+    return text
+
+
+def say_trace(result, words, days, files, billing="api"):
+    total = result["total"]
+    lines = ["# %s" % words.get("trace_title", "What the agents did"), ""]
+    lines.append("- %s sessions (%s of them subagent runs), %s API responses, %s tool calls, %s web searches, "
+                 "%s log files, %d days" % (tuple("{:,}".format(n) for n in (
+                     total["sessions"], total["subagent_sessions"], total["responses"], total["tool_calls"],
+                     total["web_search"], files)) + (days,)))
+    lines.append("- %s tokens; at the API list price of billcall's price table: %s" % (
+        "{:,}".format(total["tokens"]), cost_cell(total)))
+    if billing == "seat":
+        lines.append("- billing seat: this is in-seat usage inside the seat allowance, not money - the dollar "
+                     "figure is what the same work costs on the API")
+    else:
+        lines.append("- billing api: Enterprise (since 2026-09-01) and the API bill all of this at API rates; "
+                     "a Team seat covers it inside its allowance")
+    for kind, title in (("person", "By person"), ("project", "By project"), ("day", "By day")):
+        lines.extend(["", "## %s" % title, "",
+                      "| %s | sessions | subagent runs | responses | tool calls | tokens | cost |" % kind,
+                      "|---|---:|---:|---:|---:|---:|---:|"])
+        group = result[kind]
+        names = sorted(group) if kind == "day" else sorted(group, key=lambda k: (-group[k]["usd"], k))
+        for name in names:
+            row = group[name]
+            lines.append("| %s | %s | %s | %s | %s | %s | %s |" % ((name,) + tuple("{:,}".format(row[k]) for k in (
+                "sessions", "subagent_sessions", "responses", "tool_calls", "tokens")) + (cost_cell(row),)))
+    lines.extend(["", "## Tools the agents called", ""])
+    if result["tools"]:
+        for name in sorted(result["tools"], key=lambda k: (-result["tools"][k], k)):
+            lines.append("- %s: %d" % (name, result["tools"][name]))
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Models", ""])
+    for model in sorted(result["models"]):
+        slot = result["models"][model]
+        lines.append("- %s: %s tokens, %s" % (model, "{:,}".format(slot["tokens"]),
+                                             money(slot["usd"]) if slot["usd"] is not None else "no price in the table"))
+    return "\n".join(lines) + "\n"
+
+
+def trace_ndjson(entries, rows):
+    """One JSON line per API response: the raw material for a spreadsheet, a BI tool or a FOCUS export."""
+    out = []
+    for entry in entries:
+        row = model_row(entry["model"], rows)
+        cost = entry_cost(entry, row) if row else None
+        out.append(json.dumps({
+            "time": entry["time"].isoformat(), "day": local_day(entry["time"]).isoformat(),
+            "person": entry["person"], "project": entry["project"], "session": entry["session"],
+            "subagent": entry["subagent"], "branch": entry["branch"], "model": entry["model"],
+            "input": entry["input"], "output": entry["output"], "cache_read": entry["read"],
+            "cache_write_5m": entry["write_5m"], "cache_write_1h": entry["write_1h"],
+            "web_search": entry["web_search"], "web_fetch": entry["web_fetch"], "tools": entry["tools"],
+            "usd": round(cost, 6) if cost is not None else None,
+            "price_row": row.get("id") if row else None}, sort_keys=True))
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------- guard ---------------------
@@ -1010,6 +1310,19 @@ def budget_of(args, policy):
         if value is not None:
             number(value)
     return (float(day) if day else None), (float(month) if month else None)
+
+
+BILLINGS = ("api", "seat")
+
+
+def billing_of(explicit, policy):
+    """How Claude usage is paid: 'api' (API keys, Enterprise since 2026-09-01, usage credits beyond a
+    seat: every token is money) or 'seat' (inside a Team, Pro or Max seat allowance: not billed in
+    dollars). --billing, then `claude_billing` of the company policy, then 'api'."""
+    value = explicit or (policy or {}).get("claude_billing") or "api"
+    if value not in BILLINGS:
+        raise Problem("claude_billing is api or seat, got %r" % (value,))
+    return value
 
 
 def level(spent, budget):
@@ -1031,8 +1344,9 @@ def guard(args, table, now=None):
         except ValueError:
             cwd = None
     policy, _where = read_policy(args.policy, cwd)
+    billing = billing_of(getattr(args, "billing", None), policy)
     day_budget, month_budget = budget_of(args, policy)
-    if day_budget is None and month_budget is None:
+    if day_budget is None and month_budget is None and billing == "api":
         return None
     now = now or datetime.datetime.now(datetime.timezone.utc)
     local_now = datetime.datetime.fromtimestamp(now.timestamp())
@@ -1043,7 +1357,11 @@ def guard(args, table, now=None):
     today = local_now.date().isoformat()
     spent_day = by_day.get(today, 0.0)
     spent_month = sum(by_day.values())
-    return {"day": (spent_day, day_budget, level(spent_day, day_budget)),
+    if billing == "seat":
+        # Inside the seat allowance usage is not metered in dollars: no alarm, one 'not money' line.
+        return {"day": (spent_day, None, None), "month": (spent_month, None, None), "in_seat": True,
+                "partial": partial, "lang": pick_lang(getattr(args, "lang", None), policy)}
+    return {"in_seat": False, "day": (spent_day, day_budget, level(spent_day, day_budget)),
             "month": (spent_month, month_budget, level(spent_month, month_budget)),
             "partial": partial, "lang": pick_lang(getattr(args, "lang", None), policy)}
 
@@ -1051,6 +1369,9 @@ def guard(args, table, now=None):
 def say_guard(result, words=None):
     """The one budget line, in the person's language (lang/<code>.json, English underneath)."""
     words = words or lang_words("en")
+    if result.get("in_seat"):
+        line = words["guard_in_seat"].format(day=money(result["day"][0]), month=money(result["month"][0]))
+        return 0, line + (words["guard_partial"] if result["partial"] else "")
     parts = []
     worst = 0
     for name in ("day", "month"):
@@ -1479,11 +1800,24 @@ def parser():
     one.add_argument("--logs", action="append", help="a Claude Code projects folder (repeatable)")
     one.add_argument("--team-csv", help="the spend report CSV of a Team or Enterprise organisation")
     one.add_argument("--roster", help="one e-mail per line: the people who hold seats")
-    one.add_argument("--idle-below", default=1, type=float, help="requests below which a seat counts as idle")
+    one.add_argument("--idle-below", default=1, type=float, help="activity below which a seat counts as idle")
+    one.add_argument("--activity", help="the analytics export CSV (e-mail and activity columns): who used a seat")
     one.add_argument("--otel", help="an OTLP JSON export holding claude_code.cost.usage")
     one.add_argument("--report", help="write the report into this folder, under the language's file name")
     one.add_argument("--lang", help="en, es, pt, ru or uk (default: the policy's, then the system's)")
     one.add_argument("--json", action="store_true")
+
+    one = sub.add_parser("trace", help="what the agents did and what it cost, per person, project and day")
+    one.add_argument("--days", type=int, default=7)
+    one.add_argument("--since", help="YYYY-MM-DD (instead of --days)")
+    one.add_argument("--until", help="YYYY-MM-DD, not included (default: now)")
+    one.add_argument("--logs", action="append", help="[PERSON=]a Claude Code projects folder (repeatable)")
+    one.add_argument("--person", help="the person of a bare folder (default: user@machine)")
+    one.add_argument("--billing", choices=BILLINGS, help="api or seat (default: the policy's claude_billing, then api)")
+    one.add_argument("--report", help="write the report into this folder")
+    one.add_argument("--lang", help="en, es, pt, ru or uk (default: the policy's, then the system's)")
+    one.add_argument("--json", action="store_true")
+    one.add_argument("--ndjson", action="store_true", help="one JSON line per API response")
 
     one = sub.add_parser("guard", help="spend against a budget: 50, 80, 100 per cent")
     one.add_argument("--budget-day", type=float)
@@ -1491,6 +1825,7 @@ def parser():
     one.add_argument("--policy", help="company-ai-policy.json (default: looked for where firmcall puts it)")
     one.add_argument("--logs", action="append")
     one.add_argument("--hook", action="store_true", help="SessionStart: one line from 50%%, silence below")
+    one.add_argument("--billing", choices=BILLINGS, help="api (every token is money) or seat (inside a seat allowance)")
     one.add_argument("--lang", help="en, es, pt, ru or uk (default: the company policy, then the system)")
 
     one = sub.add_parser("contract", help="Team against Enterprise; the modelPricing block")
@@ -1577,6 +1912,49 @@ def run(argv):
                             for k, v in team.items())
             print(json.dumps(dict(result, logs=logs, team=team), indent=2, sort_keys=True, default=str))
         elif not args.report:
+            print(text)
+        return 0
+    if args.command == "trace":
+        policy = {}
+        try:
+            policy = read_policy()[0]
+        except Problem:
+            policy = {}
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if args.since:
+            day = parse_day(args.since)
+            if day is None:
+                raise Problem("--since needs YYYY-MM-DD")
+            since = datetime.datetime.fromtimestamp(time.mktime(day.timetuple()), datetime.timezone.utc)
+        else:
+            since = now - datetime.timedelta(days=max(1, int(args.days)))
+        until = None
+        if args.until:
+            day = parse_day(args.until)
+            if day is None:
+                raise Problem("--until needs YYYY-MM-DD")
+            until = datetime.datetime.fromtimestamp(time.mktime(day.timetuple()), datetime.timezone.utc)
+        days = max(1, int(round(((until or now) - since).total_seconds() / 86400.0)))
+        entries, files = read_trace(trace_roots(args.logs, args.person), since, until)
+        if args.ndjson:
+            text = trace_ndjson(entries, table["rows"])
+            if text:
+                print(text)
+            return 0
+        result = trace(entries, table["rows"])
+        if args.json:
+            print(json.dumps(dict(result, files=files, days=days), indent=2, sort_keys=True))
+            return 0
+        words = lang_words(pick_lang(args.lang, policy))
+        text = say_trace(result, words, days, files, billing_of(args.billing, policy))
+        if args.report:
+            if not os.path.isdir(args.report):
+                raise Problem("--report needs an existing folder, got %s" % args.report)
+            target = os.path.join(args.report, words.get("trace_file", "trace-AI.md"))
+            with open(target, "w", encoding="utf-8") as handle:
+                handle.write(text)
+            print("billcall: the report is in %s" % target)
+        else:
             print(text)
         return 0
     if args.command == "guard":

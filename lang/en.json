@@ -16,7 +16,10 @@
     "guard_partial": "appended when the log scan stopped at its time limit",
     "ratio_headline": "the one-line headline under the cheap-class table; keep {low}, {high}, {haiku}, {sonnet}; never present a weaker model as a plain saving",
     "ratio_other": "one line per other reference model; keep {model} and {range}",
-    "ratio_conditions": "the conditions the ratios hold under; keep {updated}"
+    "ratio_conditions": "the conditions the ratios hold under; keep {updated}",
+    "guard_in_seat": "the session-start line on a seat (claude_billing seat): in-seat usage is not money; keep {day} and {month}",
+    "trace_file": "the file name of the trace report billcall writes into the company's folder",
+    "trace_title": "the first heading of the trace report: what the agents did and what it cost"
   },
   "week_file": "week-AI.md",
   "week_title": "AI this week",
@@ -33,5 +36,8 @@
   "guard_partial": " (counted from part of the logs: the scan stopped at its time limit)",
   "ratio_headline": "Headline: the cheap Chinese models (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) are {low}-{high} times cheaper than Claude per 1M tokens: against Haiku 4.5 {haiku}, against Sonnet 5.5 {sonnet}. Against Sonnet this is a move to a weaker model, not a plain saving.",
   "ratio_other": "- against {model}: {range}",
-  "ratio_conditions": "Conditions: list prices of each vendor's own API from data/prices.json ({updated}), per 1M tokens, blended 3 input : 1 output, no cache, no batch; DeepSeek at its peak-hour price; the lowest prompt tier. A ratio above 1 means the Chinese model is cheaper. Quality index: Artificial Analysis Intelligence Index as recorded in the row (variants differ: max, high). Tokenizers differ between vendors, so the same text is not the same number of tokens; Claude 5.x counts about 1.3x the tokens of the previous Claude tokenizer (the row's tokenizer_factor), which raises the Sonnet 5.5 ratios by up to 1.3x for the same text. Kimi K2.7-code (Moonshot has no flash-class model) is in the table but not in the headline."
+  "ratio_conditions": "Conditions: list prices of each vendor's own API from data/prices.json ({updated}), per 1M tokens, blended 3 input : 1 output, no cache, no batch; DeepSeek at its peak-hour price; the lowest prompt tier. A ratio above 1 means the Chinese model is cheaper. Quality index: Artificial Analysis Intelligence Index as recorded in the row (variants differ: max, high). Tokenizers differ between vendors, so the same text is not the same number of tokens; Claude 5.x counts about 1.3x the tokens of the previous Claude tokenizer (the row's tokenizer_factor), which raises the Sonnet 5.5 ratios by up to 1.3x for the same text. Kimi K2.7-code (Moonshot has no flash-class model) is in the table but not in the headline.",
+  "guard_in_seat": "billcall: in-seat usage on this computer - today {day}, this month {month} at API list price; inside the seat allowance it is not billed in dollars",
+  "trace_file": "trace-AI.md",
+  "trace_title": "What the agents did"
 }

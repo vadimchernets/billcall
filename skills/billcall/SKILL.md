@@ -1,6 +1,6 @@
 ---
 name: billcall
-description: Count and compare what AI costs a company - before buying and every week after. Use it when someone from a company asks what Claude, ChatGPT, Gemini, Copilot or the Chinese models would cost for their team, which seats to buy for whom, whether scripts should run on the API, what the company spent this week, whether Team or Enterprise is cheaper, whether an own GPU machine pays off, or wants a budget alarm. It works from one dated price table and buys nothing.
+description: Count and compare what AI costs a company - before buying and every week after. Use it when someone from a company asks what Claude, ChatGPT, Gemini, Copilot or the Chinese models would cost for their team, which seats to buy for whom, whether scripts should run on the API, what the company spent this week, what the agents did and what it cost per person, project and day, whether Team or Enterprise is cheaper, whether an own GPU machine pays off, or wants a budget alarm. It works from one dated price table and buys nothing.
 argument-hint: "[estimate | use | week | guard | contract | local | side-by-side | prices] [what to count]"
 allowed-tools: Bash(sh "${CLAUDE_PLUGIN_ROOT}/hooks/python.sh" billcall say skills/billcall/scripts/billcall.py *) PowerShell(${CLAUDE_PLUGIN_ROOT}/hooks/python.ps1 billcall say skills/billcall/scripts/billcall.py *) Read Write
 ---
@@ -108,9 +108,26 @@ sh "${CLAUDE_PLUGIN_ROOT}/hooks/python.sh" billcall say skills/billcall/scripts/
 That counts Claude Code's own logs on this computer at list price, the way `/usage` does — on a subscription seat
 it is what the same work would have cost on the API. For the whole organisation add the spend report: on Team and
 Enterprise an admin exports it from the organisation's analytics as a CSV (per person and per model); add
-`--team-csv "<file>"`. With `--roster "<file>"` (one e-mail per line: who holds a seat) the report lists the seats
-nobody used. A company that exports OpenTelemetry gives `--otel "<file>"`. To leave the report in the folder in the
-person's language: `--report "<folder>" --lang ru` (en, es, pt, ru, uk) — the file is named in that language.
+`--team-csv "<file>"` (it covers usage-credit spend). With `--roster "<file>"` (one e-mail per line: who holds a
+seat) and the activity — the analytics export as `--activity "<file>"`, or an OpenTelemetry export as `--otel "<file>"`
+— the report lists the seats nobody used; a person who works inside the seat allowance spends $0 in usage credits and
+still counts as active. To leave the report in the folder in the person's language: `--report "<folder>" --lang ru`
+(en, es, pt, ru, uk) — the file is named in that language.
+
+## 3a. What the agents did (trace)
+
+```
+sh "${CLAUDE_PLUGIN_ROOT}/hooks/python.sh" billcall say skills/billcall/scripts/billcall.py trace --days 7
+```
+
+That reads the Claude Code session logs (`~/.claude/projects/*/*.jsonl` and the subagent logs under them,
+`$CLAUDE_CONFIG_DIR` first) and shows per person, per project and per day: sessions, subagent runs, API responses,
+tool calls, tokens and the cost at the API list price of billcall's price table (5-minute and one-hour cache writes
+priced apart; a model the table does not price shows its tokens and "no price"). For a team, collect each person's
+projects folder and name it: `--logs ann="<folder>" --logs bob="<folder>"`. `--since 2026-10-01 --until
+2026-10-08` for a period, `--json` for the totals, `--ndjson` for one line per API response (a spreadsheet, a BI
+tool), `--report "<folder>"` to leave it in the folder. On Enterprise (since 2026-09-01) and on the API this is the
+bill; inside a Team seat's allowance it is the API-equivalent value of the work.
 
 ## 4. A budget alarm (guard)
 
@@ -122,6 +139,10 @@ policy file; firmcall writes it, or write it yourself in the company folder), or
 ```
 sh "${CLAUDE_PLUGIN_ROOT}/hooks/python.sh" billcall say skills/billcall/scripts/billcall.py guard
 ```
+
+On a Team, Pro or Max seat set `"claude_billing": "seat"` in the policy (or `--billing seat`): usage inside the
+seat allowance is not billed in dollars, so the hook stays silent and `guard` prints one line of in-seat usage, not
+money. The alarm is for money: API keys, Enterprise and usage credits (`claude_billing` `api`, the default).
 
 At 100% tell the person in one line and ask the one responsible before going on. On Team and Enterprise the hard cap
 is the organisation's spend limit in the admin settings; billcall's line is the early warning on this computer.

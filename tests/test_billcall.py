@@ -392,21 +392,44 @@ class Logs(unittest.TestCase):
         self.assertAlmostEqual(team["ann@acme.test"]["net"], 13.5)
         self.assertEqual(team["ann@acme.test"]["requests"], 150)
         roster = Path(self.tmp.name) / "roster.txt"
-        roster.write_text("# seats\nann@acme.test\nBob@acme.test\ncyd@acme.test\n", encoding="utf-8")
+        roster.write_text("# seats\nann@acme.test\nBob@acme.test\ncyd@acme.test\ndee@acme.test\n", encoding="utf-8")
+        # Activity, not spend: dee spent nothing in usage credits and worked all week inside her seat.
+        activity = Path(self.tmp.name) / "activity.csv"
+        activity.write_text("email,date,sessions,lines_accepted,total_spend_usd\n"
+                            "ann@acme.test,2026-10-01,3,120,13.50\n"
+                            "dee@acme.test,2026-10-01,5,300,0\n"
+                            "bob@acme.test,2026-10-01,0,0,4.00\n", encoding="utf-8")
         code, out = cli("week", "--logs", str(self.root), "--team-csv", str(csv_path), "--roster", str(roster),
-                        "--lang", "en")
+                        "--activity", str(activity), "--lang", "en")
         self.assertEqual(code, 0, out)
         idle = out.split("## Seats nobody used", 1)[1]
         self.assertIn("bob@acme.test", idle)
         self.assertIn("cyd@acme.test", idle)
         self.assertNotIn("ann@acme.test", idle)
+        self.assertNotIn("dee@acme.test", idle)          # zero spend is not an unused seat
 
-    def test_a_roster_without_a_spend_report_is_refused(self):
+    def test_idle_seats_from_opentelemetry_activity(self):
+        path = Path(self.tmp.name) / "otel.json"
+        path.write_text(json.dumps({"resourceMetrics": [{"scopeMetrics": [{"metrics": [{
+            "name": "claude_code.session.count", "sum": {"aggregationTemporality": 1, "dataPoints": [
+                {"asInt": 2, "attributes": [{"key": "user.email", "value": {"stringValue": "Ann@acme.test"}}]},
+                {"asInt": 0, "attributes": [{"key": "user.email", "value": {"stringValue": "bob@acme.test"}}]}]}}]}]}]}),
+            encoding="utf-8")
+        self.assertEqual(billcall.otel_activity(str(path)), {"ann@acme.test": 1.0})
+        roster = Path(self.tmp.name) / "roster.txt"
+        roster.write_text("ann@acme.test\nbob@acme.test\n", encoding="utf-8")
+        code, out = cli("week", "--logs", str(self.root), "--roster", str(roster), "--otel", str(path), "--lang", "en")
+        self.assertEqual(code, 0, out)
+        idle = out.split("## Seats nobody used", 1)[1]
+        self.assertIn("bob@acme.test", idle)
+        self.assertNotIn("ann@acme.test", idle)
+
+    def test_a_roster_without_activity_is_refused(self):
         roster = Path(self.tmp.name) / "roster.txt"
         roster.write_text("ann@acme.test\n", encoding="utf-8")
         code, out = cli("week", "--logs", str(self.root), "--roster", str(roster))
         self.assertEqual(code, 2)
-        self.assertIn("--team-csv", out)
+        self.assertIn("--activity", out)
 
     def test_otel_cumulative_series_count_once_and_deltas_add(self):
         def export(value, temporality, email, start):
@@ -461,10 +484,12 @@ class Guard(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_guard(self, *extra, budget=None):
+    def run_guard(self, *extra, budget=None, env=None):
+        extra_env = env or {}
         env = dict(os.environ, HOME=str(self.home), USERPROFILE=str(self.home))
         env.pop("CLAUDE_CONFIG_DIR", None)
         env.pop("COMPANY_AI_POLICY", None)
+        env.update(extra_env)
         env["BILLCALL_LANG"] = "en"
         if budget is not None:
             self.policy.write_text(json.dumps({"schema": 1, "max_usd_per_day": budget}), encoding="utf-8")
@@ -496,6 +521,21 @@ class Guard(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn(words["guard_80"].strip(". "), done.stdout)
         self.assertNotIn("of the budget", done.stdout)
+
+    def test_on_a_seat_the_hook_is_silent_and_the_line_says_not_money(self):
+        self.policy.write_text(json.dumps({"schema": 1, "max_usd_per_day": 0.5, "claude_billing": "seat"}),
+                               encoding="utf-8")
+        env_policy = {"COMPANY_AI_POLICY": str(self.policy)}
+        done = self.run_guard("--hook", env=env_policy)
+        self.assertEqual((done.returncode, done.stdout), (0, ""), done.stderr)
+        line = self.run_guard(env=env_policy)
+        self.assertEqual(line.returncode, 0, line.stdout + line.stderr)
+        self.assertIn("in-seat usage", line.stdout)
+        self.assertIn("$0.85", line.stdout)
+        self.assertIn("not billed in dollars", line.stdout)
+        self.assertNotIn("budget", line.stdout)
+        red = self.run_guard("--billing", "api", env=env_policy)        # usage credits: the alarm is back
+        self.assertEqual(red.returncode, 1, red.stdout + red.stderr)
 
     def test_a_spent_budget_is_red_on_the_command_line(self):
         done = self.run_guard(budget=0.5)
@@ -672,3 +712,85 @@ class NoNetwork(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+FIXTURES = ROOT / "tests" / "fixtures" / "trace"
+
+
+class Trace(unittest.TestCase):
+    """billcall trace over two people's fixture logs: ann (two projects, one subagent run) and bob."""
+
+    def setUp(self):
+        roots = [("ann", str(FIXTURES / "ann" / "projects")), ("bob", str(FIXTURES / "bob" / "projects"))]
+        since = datetime.datetime(2026, 9, 28, tzinfo=datetime.timezone.utc)
+        self.entries, self.files = billcall.read_trace(roots, since)
+        self.result = billcall.trace(self.entries, TABLE["rows"])
+
+    def test_each_response_counts_once_and_old_ones_stay_out(self):
+        self.assertEqual(self.files, 4)
+        self.assertEqual(self.result["total"]["responses"], 6)          # a1 on three lines is one response
+        self.assertEqual(self.result["total"]["tokens"], 51600)
+
+    def test_cost_per_person_with_both_cache_writes_priced_apart(self):
+        # ann, Opus 5.5: 1000 x $4 + 500 x $20 + 20000 x $0.20 + 2000 5-minute writes x $5 + 1000 one-hour x $8
+        # = $0.036; Sonnet 5.5: 10000 x $2 + 1000 x $10 = $0.03; subagent Opus: $0.04; the next day $0.008
+        ann = self.result["person"]["ann"]
+        self.assertAlmostEqual(ann["usd"], 0.114, places=9)
+        self.assertEqual((ann["sessions"], ann["subagent_sessions"], ann["tool_calls"]), (3, 1, 4))
+        bob = self.result["person"]["bob"]
+        self.assertAlmostEqual(bob["usd"], 0.01, places=9)             # a dated Sonnet 5.5 id finds its row
+
+    def test_an_unknown_model_is_named_never_zero(self):
+        bob = self.result["person"]["bob"]
+        self.assertEqual(bob["unpriced_tokens"], 3100)
+        self.assertIsNone(self.result["models"]["claude-unknown-9"]["usd"])
+        text = billcall.say_trace(self.result, billcall.lang_words("en"), 5, self.files)
+        self.assertIn("3,100 tokens with no price", text)
+        self.assertIn("claude-unknown-9: 3,100 tokens, no price in the table", text)
+
+    def test_by_project_and_by_day(self):
+        self.assertEqual(sorted(self.result["project"]), ["/work/acme/api", "/work/acme/web"])
+        self.assertAlmostEqual(self.result["project"]["/work/acme/api"]["usd"], 0.008, places=9)
+        self.assertAlmostEqual(self.result["day"]["2026-09-30"]["usd"], 0.106, places=9)
+        self.assertAlmostEqual(self.result["day"]["2026-10-01"]["usd"], 0.018, places=9)
+
+    def test_what_the_agents_did(self):
+        self.assertEqual(self.result["tools"], {"Bash": 1, "Read": 1, "WebSearch": 1, "Grep": 1, "Edit": 1})
+        self.assertEqual(self.result["total"]["web_search"], 2)
+
+    def test_on_the_command_line_markdown_json_and_ndjson(self):
+        base = ["trace", "--logs", "ann=%s" % (FIXTURES / "ann" / "projects"),
+                "--logs", "bob=%s" % (FIXTURES / "bob" / "projects"), "--since", "2026-09-28", "--lang", "en"]
+        code, out = cli(*base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("# What the agents did", out)
+        self.assertIn("| ann | 3 | 1 | 4 | 4 | 43,500 | $0.11 |", out)
+        code, out = cli(*(base + ["--json"]))
+        self.assertEqual(code, 0, out)
+        self.assertAlmostEqual(json.loads(out)["person"]["ann"]["usd"], 0.114, places=9)
+        code, out = cli(*(base + ["--ndjson"]))
+        self.assertEqual(code, 0, out)
+        lines = [json.loads(line) for line in out.splitlines()]
+        self.assertEqual(len(lines), 6)
+        first = lines[0]
+        self.assertEqual((first["person"], first["project"], first["cache_write_1h"], first["tools"]),
+                         ("ann", "/work/acme/web", 1000, {"Bash": 1, "Read": 1}))
+        self.assertEqual(first["price_row"], "anthropic-api-claude-opus-5-5")
+
+    def test_on_a_seat_the_figure_is_not_money(self):
+        text = billcall.say_trace(self.result, billcall.lang_words("en"), 5, self.files, billing="seat")
+        self.assertIn("not money", text)
+
+    def test_the_report_lands_in_the_folder_in_the_persons_language(self):
+        words = json.loads((ROOT / "lang" / "uk.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as folder:
+            code, out = cli("trace", "--logs", str(FIXTURES / "bob" / "projects"), "--person", "bob",
+                            "--since", "2026-09-28", "--report", folder, "--lang", "uk")
+            self.assertEqual(code, 0, out)
+            report = Path(folder) / words["trace_file"]
+            self.assertIn(words["trace_title"], report.read_text(encoding="utf-8"))
+
+    def test_a_missing_folder_is_named(self):
+        code, out = cli("trace", "--logs", "ann=/no/such/folder")
+        self.assertEqual(code, 2)
+        self.assertIn("/no/such/folder", out)
