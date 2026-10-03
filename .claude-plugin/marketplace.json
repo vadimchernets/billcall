@@ -3,14 +3,14 @@
   "owner": { "name": "Vadym Chernets" },
   "metadata": {
     "description": "billcall: what AI costs a company - the bill of a mix before buying, the week's spend after, budget alarms, Team against Enterprise. Counts and compares; buys nothing.",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "billcall",
       "source": "./",
       "description": "The monthly bill of a mix of seats, API work and own machines from one dated price table; the week's spend and idle seats; budget alarms at 50/80/100%; Team against Enterprise; contract rates for managed settings. Buys nothing, never asks for a card.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "Vadym Chernets" },
       "license": "Apache-2.0",
       "keywords": ["cost", "pricing", "budget", "team", "enterprise", "for-companies"],
