@@ -1,0 +1,20 @@
+{
+  "title": "billcall: what AI costs a company, counted from one dated price table",
+  "description": "billcall is a Claude Code plugin that counts and compares what AI costs a company. From one price table in which every row names its source page and the day it was read, it prices a mix of team seats, API work for scripts and own machines, shows the price of one accepted task and every vendor rule the mix breaks (personal plans for a company, scripts on coding plans, seat minimums, vendors the company policy leaves out). It reads the week's spend from Claude Code's own logs, the Team and Enterprise spend report and OpenTelemetry exports, lists idle seats, raises budget alarms at 50, 80 and 100 per cent, compares Team with Enterprise, turns contract rates into a modelPricing block for managed settings, and weighs an own GPU machine against renting. It buys nothing and never asks for a card. Python standard library only, no network.",
+  "creators": [
+    {
+      "name": "Chernets, Vadym"
+    }
+  ],
+  "upload_type": "software",
+  "license": "apache-2.0",
+  "keywords": [
+    "claude-code-plugin",
+    "ai-cost",
+    "pricing",
+    "budget",
+    "finops",
+    "team-seats",
+    "for-companies"
+  ]
+}

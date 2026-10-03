@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "about": "What data/facts-2026-10.md, data/late-opinions-map.md and data/jev-ideas-map.md must cover. Made on 2026-10-02 from the run's plan/plan.md (748 lines), its opinion folders and the owner's JEV folder. tools/check_coverage.py --plan and --run-dir compare it with the live ones.",
+  "plan_lines": 748,
+  "facts": {
+    "file": "data/facts-2026-10.md",
+    "tagged_refs": [
+      "plan.md:45", "plan.md:138", "plan.md:146", "plan.md:147", "plan.md:150", "plan.md:213",
+      "plan.md:218", "plan.md:255", "plan.md:268", "plan.md:271", "plan.md:272", "plan.md:273",
+      "plan.md:276", "plan.md:277", "plan.md:279", "plan.md:288", "plan.md:458"
+    ],
+    "plan_lines_not_claims": {
+      "7": "the legend of the 'critic checked it' tag",
+      "8": "the legend of the 'secondary source only' tag",
+      "9": "the legend of the 'late opinion' tag",
+      "351": "a row of the v1 corrections table that talks about the tag itself",
+      "486": "stage E1's own task text, which names the tags"
+    },
+    "other_refs": [
+      "plan.md:46", "plan.md:47", "plan.md:48", "plan.md:51", "plan.md:58", "plan.md:60", "plan.md:61",
+      "plan.md:63", "plan.md:67", "plan.md:68", "plan.md:69", "plan.md:70", "plan.md:71", "plan.md:72",
+      "plan.md:73", "plan.md:74", "plan.md:101", "plan.md:108", "plan.md:110", "plan.md:111",
+      "plan.md:112", "plan.md:113", "plan.md:114", "plan.md:115", "plan.md:116", "plan.md:117",
+      "plan.md:123", "plan.md:145", "plan.md:153", "plan.md:210", "plan.md:212", "plan.md:244",
+      "plan.md:247", "plan.md:249", "plan.md:253", "plan.md:263", "plan.md:350", "plan.md:401",
+      "plan.md:404", "plan.md:424", "plan.md:425", "plan.md:434", "plan.md:437", "plan.md:438",
+      "plan.md:611"
+    ]
+  },
+  "late_map": {
+    "file": "data/late-opinions-map.md",
+    "required": [
+      "opinions-late/gemini-nb1.md", "opinions-late/meta-nb1.md", "opinions-late/opus-nb1.md",
+      "opinions-late/reserve-2.md", "opinions-late/reserve-2-nb1.md", "opinions-late/deepseek.md",
+      "opinions-late/reserve-1.md", "opinions-late/reserve-2-nb2.md", "opinions-late/world-deepseek.md",
+      "opinions-late/world-reserve-1.md", "opinions-late/world-reserve-2-nb1.md",
+      "opinions-late/meta-plan-critic.md", "opinions-late/opus-plan-critic.md",
+      "opinions/world-gemini.md", "opinions/world-meta.md", "opinions/world-opus.md",
+      "opinions/world-reserve-2.md", "opinions/gemini.md", "opinions/meta.md", "opinions/opus.md",
+      "world-retry-gemini.md", "world-retry-meta.md", "world-retry-opus.md",
+      "meta-plan-critic-full-text",
+      "gemini-drafts/BUSINESS-TRACK-PLAN.md", "gemini-drafts/scratch/lesson-ru.md",
+      "gemini-drafts/scratch/setupcall/README.md", "gemini-drafts/scratch/costcall/README.md",
+      "opinions-2", "plan-critique", "first-run-opinions",
+      "deepseek-run/opinions/deepseek.md", "deepseek-run/opinions/reserve-1.md", "deepseek-run/opinions/reserve-2.md", "deepseek-run/opinions/world-deepseek.md",
+      "deepseek-run/opinions/world-reserve-1.md", "deepseek-run/opinions/world-reserve-2.md", "deepseek-run/world-retry-reserve-1.md", "deepseek-run/world-retry-deepseek.md"
+    ]
+  },
+  "jev_map": {
+    "file": "data/jev-ideas-map.md",
+    "required": [
+      "92.txt:4-106", "92.txt:112-122", "92.txt:124-204", "92.txt:206", "92.txt:212-255",
+      "92.txt:257-298", "92.txt:300-357", "92.txt:374-396", "92.txt:400-431", "92.txt:459-473",
+      "92.txt:485-541", "92.txt:552-595", "92.txt:601-648", "92.txt:638", "92.txt:673-708",
+      "92.txt:716-806", "92.txt:825-891", "92.txt:893",
+      "93.txt:4-68", "93.txt:72-78", "93.txt:86-112", "93.txt:116-145", "93.txt:157-159",
+      "93.txt:163-218", "93.txt:206-208", "93.txt:222-261", "93.txt:265-380", "93.txt:384-428",
+      "93.txt:432-447",
+      "screenshot-2026-09-28-1.36.03-PM", "screenshot-2026-09-28-11.59.00-PM"
+    ]
+  }
+}

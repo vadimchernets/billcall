@@ -1,0 +1,16 @@
+{
+  "name": "Português",
+  "week_file": "semana-IA.md",
+  "week_title": "A IA nesta semana",
+  "week_this_machine": "Este computador (registos do Claude Code, a preço de tabela)",
+  "week_team": "O relatório de gastos da organização",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "Licenças que ninguém usou",
+  "guard_head": "billcall: gasto com IA neste computador a preço de tabela - {parts}",
+  "guard_day": "hoje {spent} de {budget} ({share}%)",
+  "guard_month": "este mês {spent} de {budget} ({share}%)",
+  "guard_spent": ". O orçamento acabou: diga à pessoa e pergunte ao responsável antes de continuar.",
+  "guard_80": ". 80% do orçamento já foi.",
+  "guard_50": ". Metade do orçamento já foi.",
+  "guard_partial": " (contado com parte dos registos: a leitura parou no limite de tempo)"
+}

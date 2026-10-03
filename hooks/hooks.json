@@ -1,0 +1,17 @@
+{
+  "description": "billcall's one hook. At session start, when the company has set a budget (max_usd_per_day or max_usd_per_month in company-ai-policy.json, or ~/.billcall/budget.json), it says in one line how much of it Claude Code on this computer has spent today and this month at list price - from 50% of the budget on, and again at 80% and 100%. With no budget, or below half of it, it says nothing. It goes through the step 0 guard in quiet mode: with no Python it says nothing either, and the session goes on.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec sh \"${CLAUDE_PLUGIN_ROOT}/hooks/python.sh\" billcall quiet \"${CLAUDE_PLUGIN_ROOT}/skills/billcall/scripts/billcall.py\" guard --hook\ntrap { continue }; & ([scriptblock]::Create((Get-Content -Raw -LiteralPath \"${CLAUDE_PLUGIN_ROOT}/hooks/python.ps1\"))) billcall quiet \"${CLAUDE_PLUGIN_ROOT}/skills/billcall/scripts/billcall.py\" guard --hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

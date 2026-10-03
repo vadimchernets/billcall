@@ -1,0 +1,15 @@
+billcall
+Copyright 2026 Vadym Chernets
+
+This product includes software developed by Vadym Chernets, as part of Poly A1.
+
+Reading Claude Code's session logs follows the format Claude Code writes, and the way ccusage
+(MIT, github.com/ryoppippi/ccusage) counts them: one API response is counted once, by its message id
+and request id, although Claude Code writes it on several lines. No ccusage code is copied.
+
+Public references (as read for the plan on 2026-10-02):
+- Claude API prices, cache writes and US-only inference: https://platform.claude.com/docs/en/about-claude/pricing
+- Claude Code costs and the modelPricing managed setting: https://code.claude.com/docs/en/costs and
+  https://code.claude.com/docs/en/settings-reference
+- Claude Code OpenTelemetry metrics (claude_code.cost.usage): https://code.claude.com/docs/en/monitoring-usage
+- Every row of data/prices.json names its own page and the day it was read.

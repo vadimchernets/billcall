@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "name": "Agency of 10 people",
+  "billing": "annual",
+  "active_days_per_month": 21,
+  "roles": [
+    {
+      "id": "builders",
+      "people": 3,
+      "product": "anthropic-team-premium",
+      "note": "work in Claude Code or Cowork most of the day",
+      "surface": "cowork"
+    },
+    {
+      "id": "everyone-else",
+      "people": 7,
+      "product": "anthropic-team-standard",
+      "note": "letters, documents, research, a few agent runs a week"
+    }
+  ],
+  "automated": [
+    {
+      "id": "nightly-briefs",
+      "product": "anthropic-api-claude-haiku-4-5",
+      "input_mtok": 20,
+      "output_mtok": 2,
+      "modifiers": [
+        "Batch API"
+      ],
+      "note": "a scheduled job that reads the day's mail and files and writes short briefs"
+    }
+  ],
+  "tasks": {
+    "per_month": 600,
+    "accepted_share": 0.8
+  },
+  "alternatives": [
+    {
+      "name": "everyone on a Standard seat",
+      "replace": {
+        "builders": {
+          "product": "anthropic-team-standard"
+        }
+      }
+    },
+    {
+      "name": "the nightly briefs on DeepSeek V4.1 Flash",
+      "replace": {
+        "nightly-briefs": {
+          "product": "deepseek-api-flash",
+          "modifiers": []
+        }
+      }
+    }
+  ]
+}

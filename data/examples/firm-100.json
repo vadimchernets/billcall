@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "Firm of 100 people on Microsoft 365",
+  "billing": "annual",
+  "active_days_per_month": 21,
+  "roles": [
+    {"id": "builders", "people": 20, "product": "anthropic-team-premium",
+     "note": "the people who work in an agent all day"},
+    {"id": "office", "people": 80, "product": "microsoft-365-copilot-business", "already_paid": true,
+     "note": "already licensed: Copilot in Word, Excel, Outlook and Teams"}
+  ],
+  "automated": [
+    {"id": "ticket-triage", "product": "deepseek-api-flash",
+     "input_mtok": 60, "output_mtok": 6, "cached_input_mtok": 40, "modifiers": ["off-peak"],
+     "note": "sorting incoming requests overnight; off-peak hours cover the whole US working day"},
+    {"id": "contract-review", "product": "anthropic-api-claude-sonnet-5-5",
+     "input_mtok": 15, "output_mtok": 3, "modifiers": ["Batch API"]}
+  ],
+  "tasks": {"per_month": 9000, "accepted_share": 0.85},
+  "alternatives": [
+    {"name": "the 80 office people on Claude Team Standard instead of Copilot",
+     "replace": {"office": {"product": "anthropic-team-standard", "already_paid": false}}}
+  ]
+}

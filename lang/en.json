@@ -1,0 +1,31 @@
+{
+  "name": "English",
+  "_purpose": {
+    "week_file": "the file name of the weekly report billcall writes into the company's folder; the person sees it in their file list, so it is a plain word in their language",
+    "week_title": "the first heading of that report, read by the person who pays",
+    "week_this_machine": "heading of the part counted from this computer's Claude Code logs at list price",
+    "week_team": "heading of the part read from the organisation's spend-report CSV",
+    "week_otel": "heading of the part read from an OpenTelemetry export; keep the metric name as it is",
+    "week_idle": "heading of the list of paid seats nobody used this week; factual, never blaming",
+    "guard_head": "the budget line at session start; {parts} is the day and month parts joined by commas",
+    "guard_day": "today's part of the budget line; keep {spent}, {budget}, {share}",
+    "guard_month": "this month's part; keep {spent}, {budget}, {share}",
+    "guard_spent": "appended when the budget is spent; it also tells Claude to ask the person responsible",
+    "guard_80": "appended from 80%",
+    "guard_50": "appended from 50%",
+    "guard_partial": "appended when the log scan stopped at its time limit"
+  },
+  "week_file": "week-AI.md",
+  "week_title": "AI this week",
+  "week_this_machine": "This computer (Claude Code logs, at list price)",
+  "week_team": "The organisation's spend report",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "Seats nobody used",
+  "guard_head": "billcall: AI spend on this computer at list price - {parts}",
+  "guard_day": "today {spent} of {budget} ({share}%)",
+  "guard_month": "this month {spent} of {budget} ({share}%)",
+  "guard_spent": ". The budget is spent: tell the person, and ask the one responsible before going on.",
+  "guard_80": ". 80% of the budget is gone.",
+  "guard_50": ". Half of the budget is gone.",
+  "guard_partial": " (counted from part of the logs: the scan stopped at its time limit)"
+}
