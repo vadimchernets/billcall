@@ -1,0 +1,22 @@
+{
+  "name": "हिन्दी",
+  "week_file": "सप्ताह-AI.md",
+  "week_title": "इस सप्ताह AI",
+  "week_this_machine": "यह कंप्यूटर (Claude Code के लॉग, सूची मूल्य पर)",
+  "week_team": "संगठन की खर्च रिपोर्ट",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "वे सीटें जिन्हें किसी ने इस्तेमाल नहीं किया",
+  "guard_head": "billcall: इस कंप्यूटर पर AI खर्च, सूची मूल्य पर - {parts}",
+  "guard_day": "आज {budget} में से {spent} ({share}%)",
+  "guard_month": "इस महीने {budget} में से {spent} ({share}%)",
+  "guard_spent": "। बजट खत्म हो गया है: व्यक्ति को बताओ और आगे बढ़ने से पहले ज़िम्मेदार से पूछो।",
+  "guard_80": "। बजट का 80% खर्च हो चुका है।",
+  "guard_50": "। बजट का आधा खर्च हो चुका है।",
+  "guard_partial": " (लॉग के एक हिस्से से गिना गया: स्कैन अपनी समय-सीमा पर रुक गया)",
+  "ratio_headline": "सार: सस्ते चीनी मॉडल (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) प्रति 1M टोकन Claude से {low}-{high} गुना सस्ते हैं: Haiku 4.5 के मुकाबले {haiku}, Sonnet 5.5 के मुकाबले {sonnet}। Sonnet के मुकाबले यह एक कमज़ोर मॉडल पर जाना है, सीधी बचत नहीं।",
+  "ratio_other": "- {model} के मुकाबले: {range}",
+  "ratio_conditions": "शर्तें: data/prices.json ({updated}) में हर विक्रेता के अपने API के सूची मूल्य, प्रति 1M टोकन, 3 इनपुट : 1 आउटपुट का मिश्रण, बिना कैश और बिना बैच; DeepSeek पीक-आवर मूल्य पर; सबसे निचला प्रॉम्प्ट स्तर। 1 से ऊपर अनुपात का मतलब है कि चीनी मॉडल सस्ता है। गुणवत्ता सूचकांक: पंक्ति के अनुसार Artificial Analysis Intelligence Index। टोकनाइज़र अलग-अलग होते हैं; Claude 5.x पिछले Claude टोकनाइज़र से लगभग 1.3 गुना टोकन गिनता है, जिससे उसी पाठ के लिए Sonnet 5.5 के अनुपात 1.3 गुना तक बढ़ जाते हैं। Kimi K2.7-code तालिका में है, पर सार में नहीं।",
+  "guard_in_seat": "billcall: इस कंप्यूटर पर सीट के भीतर उपयोग - आज {day}, इस महीने {month}, API सूची मूल्य पर; सीट की सीमा के भीतर इसका डॉलर में बिल नहीं बनता",
+  "trace_file": "निशान-AI.md",
+  "trace_title": "एजेंटों ने क्या किया"
+}

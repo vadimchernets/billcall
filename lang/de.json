@@ -1,0 +1,22 @@
+{
+  "name": "Deutsch",
+  "week_file": "woche-KI.md",
+  "week_title": "KI diese Woche",
+  "week_this_machine": "Dieser Computer (Claude-Code-Protokolle, zum Listenpreis)",
+  "week_team": "Der Ausgabenbericht der Organisation",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "Lizenzen, die niemand genutzt hat",
+  "guard_head": "billcall: KI-Ausgaben auf diesem Computer zum Listenpreis - {parts}",
+  "guard_day": "heute {spent} von {budget} ({share}%)",
+  "guard_month": "diesen Monat {spent} von {budget} ({share}%)",
+  "guard_spent": ". Das Budget ist aufgebraucht: sag es der Person und frage die verantwortliche Stelle, bevor du weitermachst.",
+  "guard_80": ". 80% des Budgets sind weg.",
+  "guard_50": ". Die Hälfte des Budgets ist weg.",
+  "guard_partial": " (aus einem Teil der Protokolle gezählt: der Scan wurde an seiner Zeitgrenze beendet)",
+  "ratio_headline": "Kurz gesagt: Die günstigen chinesischen Modelle (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) sind pro 1M Tokens {low}-{high}-mal günstiger als Claude: gegenüber Haiku 4.5 {haiku}, gegenüber Sonnet 5.5 {sonnet}. Gegenüber Sonnet ist das der Wechsel zu einem schwächeren Modell, keine reine Ersparnis.",
+  "ratio_other": "- gegenüber {model}: {range}",
+  "ratio_conditions": "Bedingungen: Listenpreise der jeweils eigenen API jedes Anbieters aus data/prices.json ({updated}), pro 1M Tokens, Mischung 3 Eingabe : 1 Ausgabe, ohne Cache und ohne Batch; DeepSeek zum Spitzenzeitpreis; die niedrigste Prompt-Stufe. Ein Verhältnis über 1 heißt, das chinesische Modell ist günstiger. Qualitätsindex: Artificial Analysis Intelligence Index laut Zeile. Die Tokenizer unterscheiden sich; Claude 5.x zählt etwa 1,3-mal so viele Tokens wie der vorherige Claude-Tokenizer, was die Verhältnisse gegenüber Sonnet 5.5 für denselben Text um bis zu das 1,3-Fache erhöht. Kimi K2.7-code steht in der Tabelle, aber nicht in der Kurzfassung.",
+  "guard_in_seat": "billcall: Nutzung im Seat auf diesem Computer - heute {day}, diesen Monat {month} zum API-Listenpreis; innerhalb des Seat-Kontingents wird nichts in Dollar berechnet",
+  "trace_file": "spur-KI.md",
+  "trace_title": "Was die Agenten getan haben"
+}

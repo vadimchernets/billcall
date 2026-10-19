@@ -1,0 +1,22 @@
+{
+  "name": "日本語",
+  "week_file": "今週のAI.md",
+  "week_title": "今週のAI",
+  "week_this_machine": "このコンピュータ（Claude Code のログ、定価ベース）",
+  "week_team": "組織の支出レポート",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "誰も使わなかったシート",
+  "guard_head": "billcall: このコンピュータのAI支出（定価ベース） - {parts}",
+  "guard_day": "今日 {budget} のうち {spent} ({share}%)",
+  "guard_month": "今月 {budget} のうち {spent} ({share}%)",
+  "guard_spent": "。予算を使い切りました。本人に伝え、続ける前に責任者に確認してください。",
+  "guard_80": "。予算の80%を使いました。",
+  "guard_50": "。予算の半分を使いました。",
+  "guard_partial": "（ログの一部から集計：スキャンは時間制限で停止しました）",
+  "ratio_headline": "要点: 安価な中国製モデル（DeepSeek V4.1 Flash、Qwen3.8-flash、GLM-5.3-Flash、MiMo-v2.6-flash、MiniMax M3）は、1Mトークンあたり Claude の {low}-{high} 分の1の価格です。Haiku 4.5 比 {haiku}、Sonnet 5.5 比 {sonnet}。Sonnet に対しては、より弱いモデルへの乗り換えであり、単純な節約ではありません。",
+  "ratio_other": "- {model} 比: {range}",
+  "ratio_conditions": "条件: data/prices.json ({updated}) にある各ベンダー自社APIの定価、1Mトークンあたり、入力3 : 出力1の混合、キャッシュなし・バッチなし、DeepSeek はピーク時間帯の価格、最も低いプロンプト区分。比率が1を超えると、中国製モデルのほうが安いことを意味します。品質指標: 行に記載の Artificial Analysis Intelligence Index。トークナイザーはベンダーごとに異なります。Claude 5.x は以前の Claude トークナイザーの約1.3倍のトークンを数えるため、同じ文章でも Sonnet 5.5 との比率は最大1.3倍高くなります。Kimi K2.7-code は表にありますが、要点には含まれません。",
+  "guard_in_seat": "billcall: このコンピュータでのシート内利用 - 今日 {day}、今月 {month}（APIの定価ベース）。シートの枠内ではドルでは請求されません",
+  "trace_file": "トレース-AI.md",
+  "trace_title": "エージェントがしたこと"
+}

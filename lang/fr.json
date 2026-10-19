@@ -1,0 +1,22 @@
+{
+  "name": "Français",
+  "week_file": "semaine-IA.md",
+  "week_title": "L'IA cette semaine",
+  "week_this_machine": "Cet ordinateur (journaux de Claude Code, au prix catalogue)",
+  "week_team": "Le rapport de dépenses de l'organisation",
+  "week_otel": "OpenTelemetry (claude_code.cost.usage)",
+  "week_idle": "Licences que personne n'a utilisées",
+  "guard_head": "billcall : dépenses d'IA sur cet ordinateur au prix catalogue - {parts}",
+  "guard_day": "aujourd'hui {spent} sur {budget} ({share}%)",
+  "guard_month": "ce mois-ci {spent} sur {budget} ({share}%)",
+  "guard_spent": ". Le budget est épuisé : dis-le à la personne et demande au responsable avant de continuer.",
+  "guard_80": ". 80% du budget est parti.",
+  "guard_50": ". La moitié du budget est partie.",
+  "guard_partial": " (compté sur une partie des journaux : l'analyse s'est arrêtée à sa limite de temps)",
+  "ratio_headline": "En bref : les modèles chinois bon marché (DeepSeek V4.1 Flash, Qwen3.8-flash, GLM-5.3-Flash, MiMo-v2.6-flash, MiniMax M3) sont {low}-{high} fois moins chers que Claude par 1M de tokens : face à Haiku 4.5 {haiku}, face à Sonnet 5.5 {sonnet}. Face à Sonnet, c'est passer à un modèle plus faible, pas une économie pure.",
+  "ratio_other": "- face à {model} : {range}",
+  "ratio_conditions": "Conditions : prix catalogue de l'API propre à chaque fournisseur dans data/prices.json ({updated}), par 1M de tokens, mélange 3 en entrée : 1 en sortie, sans cache ni batch ; DeepSeek au tarif des heures de pointe ; la tranche de prompt la plus basse. Un rapport supérieur à 1 signifie que le modèle chinois est moins cher. Indice de qualité : Artificial Analysis Intelligence Index selon la ligne. Les tokeniseurs diffèrent ; Claude 5.x compte environ 1,3 fois les tokens de l'ancien tokeniseur de Claude, ce qui augmente les rapports face à Sonnet 5.5 jusqu'à 1,3 fois pour le même texte. Kimi K2.7-code figure dans le tableau mais pas dans le résumé.",
+  "guard_in_seat": "billcall : usage dans le siège sur cet ordinateur - aujourd'hui {day}, ce mois-ci {month} au prix catalogue de l'API ; dans l'allocation du siège, il n'est pas facturé en dollars",
+  "trace_file": "trace-IA.md",
+  "trace_title": "Ce qu'ont fait les agents"
+}
