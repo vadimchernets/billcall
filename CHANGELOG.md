@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5 — 2026-10-19
+
+- Interface text in eleven languages (de, fr, hi, ja, ko, zh added next to en, es, pt, ru, uk): `lang/<code>.json` for every language of the app.
+
 ## 0.1.4 — 2026-10-03
 
 - `trace`: what the agents did and what it cost, per person, project and day, from the company's Claude Code session
