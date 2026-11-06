@@ -1,5 +1,7 @@
 # billcall
 
+> Poly helped? [Give it a star on GitHub](https://github.com/vadimchernets/billcall) - one click. The plugin is open to everyone either way.
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23116722.svg)](https://doi.org/10.5281/zenodo.23116722)
 
 What AI costs a company — counted from one dated price table, before anything is bought and every week
